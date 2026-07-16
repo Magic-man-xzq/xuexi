@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>日式私人日语学习手帐</title>
+  <style>
+    /* ==================== 全局基础与变量 ==================== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg-primary: #F8F5ED;
+      --bg-alt: #EDF4F8;
+      --text-primary: #333333;
+      --text-secondary: #666666;
+      --border-color: #666666;
+      --accent: #BFD7EA;
+      --accent-dark: #9BBFD8;
+      --card-bg: #FFFFFF;
+      --shadow: rgba(0,0,0,0.06);
+    }
+    html, body {
+      width: 100%; height: 100%;
+      font-family: "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body.theme-blue { --bg-primary: #EDF4F8; --bg-alt: #F8F5ED; }
+
+    /* ==================== 页面容器与路由 ==================== */
+    .page {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: none;
+      flex-direction: column;
+      background: var(--bg-primary);
+    }
+    .page.active { display: flex; }
+
+    /* ==================== 底部三键导航栏（全局通用） ==================== */
+    .bottom-nav {
+      height: 60px; min-height: 60px;
+      border-top: 1px solid var(--border-color);
+      display: flex; align-items: center; justify-content: space-around;
+      background: var(--bg-primary);
+      z-index: 10;
+    }
+    .nav-btn {
+      flex: 1; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; color: var(--text-secondary);
+      background: none; border: none; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .nav-btn:active { background: rgba(0,0,0,0.03); }
+    .nav-btn.active { color: var(--text-primary); background: var(--accent); }
+
+    /* ==================== 首页 ==================== */
+    #page-home { padding-bottom: 0; }
+    .home-header {
+      height: 10%; min-height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .home-title-wrap { display: flex; flex-direction: column; }
+    .home-title { font-size: 18px; font-weight: 600; color: var(--text-primary); }
+    .home-subtitle { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+    .settings-icon {
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border-radius: 50%;
+    }
+    .settings-icon:active { background: rgba(0,0,0,0.05); }
+    .settings-icon svg { width: 20px; height: 20px; stroke: var(--text-secondary); fill: none; stroke-width: 2; }
+
+    .template-grid {
+      height: 75%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 16px; padding: 16px 20px;
+    }
+    .template-card {
+      background: var(--card-bg);
+      border: 1px solid #CCCCCC;
+      border-radius: 4px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      cursor: pointer; padding: 16px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .template-card:active { border-color: var(--accent-dark); box-shadow: 0 2px 8px var(--shadow); }
+    .template-card-title { font-size: 16px; font-weight: 600; color: var(--text-primary); text-align: center; }
+    .template-card-desc { font-size: 12px; color: var(--text-secondary); margin-top: 8px; text-align: center; line-height: 1.4; }
+
+    /* ==================== 设置弹窗 ==================== */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.25);
+      display: none; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .modal-overlay.active { display: flex; }
+    .settings-modal {
+      width: 86%; max-width: 360px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 20px;
+      max-height: 80%; overflow-y: auto;
+    }
+    .modal-title { font-size: 16px; font-weight: 600; text-align: center; margin-bottom: 16px; }
+    .modal-section { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #EEEEEE; }
+    .modal-section:last-of-type { border-bottom: none; }
+    .modal-label { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+    .modal-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+    .modal-row { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+    .theme-toggle-group { display: flex; gap: 8px; }
+    .theme-option {
+      padding: 6px 12px; font-size: 12px;
+      border: 1px solid #CCCCCC; border-radius: 3px;
+      background: var(--bg-primary); cursor: pointer;
+    }
+    .theme-option.active { border-color: var(--accent-dark); background: var(--accent); }
+    .modal-close-btn {
+      width: 100%; padding: 10px;
+      font-size: 14px; color: var(--text-primary);
+      background: var(--accent); border: none; border-radius: 3px;
+      cursor: pointer; margin-top: 8px;
+    }
+    .modal-close-btn:active { background: var(--accent-dark); }
+
+    /* ==================== 设置弹窗：输入框样式（后期迭代拓展用） ==================== */
+    .modal-input {
+      width: 100%; padding: 8px 10px; margin-top: 6px;
+      font-size: 13px; border: 1px solid #CCCCCC; border-radius: 3px;
+      background: var(--bg-primary); color: var(--text-primary);
+      outline: none; font-family: inherit;
+    }
+    .modal-input:focus { border-color: var(--accent-dark); }
+    .modal-input::placeholder { color: #AAAAAA; font-size: 12px; }
+    .modal-hint {
+      font-size: 11px; color: #999999; margin-top: 4px; line-height: 1.5;
+    }
+    .mode-select-group { display: flex; gap: 8px; margin-top: 8px; }
+    .mode-option {
+      flex: 1; padding: 6px 0; font-size: 12px; text-align: center;
+      border: 1px solid #CCCCCC; border-radius: 3px;
+      background: var(--bg-primary); cursor: pointer; color: var(--text-secondary);
+    }
+    .mode-option.active { border-color: var(--accent-dark); background: var(--accent); color: var(--text-primary); }
+    .api-config-area { margin-top: 10px; display: none; }
+    .api-config-area.open { display: block; }
+
+    /* ==================== 编辑页（5:5左右分栏） ==================== */
+    .edit-body {
+      flex: 1;
+      display: flex; flex-direction: row;
+      overflow: hidden;
+    }
+    .edit-left, .edit-right {
+      flex: 1; height: 100%;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .edit-left { border-right: 1px solid var(--border-color); }
+    .edit-panel-header {
+      height: 44px; min-height: 44px;
+      display: flex; align-items: center;
+      padding: 0 16px; font-size: 14px; font-weight: 600;
+      border-bottom: 1px solid #DDDDDD;
+      background: rgba(0,0,0,0.02);
+    }
+    .edit-textarea {
+      flex: 1; width: 100%; padding: 12px;
+      font-size: 15px; line-height: 1.7;
+      border: none; outline: none; resize: none;
+      background: transparent; color: var(--text-primary);
+      font-family: inherit;
+    }
+    .edit-actions {
+      height: 52px; min-height: 52px;
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 12px; border-top: 1px solid #DDDDDD;
+    }
+    .btn-small {
+      padding: 6px 12px; font-size: 12px;
+      border: 1px solid #CCCCCC; border-radius: 3px;
+      background: var(--card-bg); cursor: pointer; color: var(--text-primary);
+    }
+    .btn-small:active { background: var(--accent); }
+    .btn-save { background: var(--accent); border-color: var(--accent-dark); }
+    .btn-save:active { background: var(--accent-dark); }
+
+    .edit-right {
+      display: flex; flex-direction: column;
+    }
+    .analysis-layer {
+      flex: 1; overflow-y: auto; padding: 12px;
+      border-bottom: 1px solid #EEEEEE;
+    }
+    .analysis-layer:last-child { border-bottom: none; }
+    .layer-title { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+    .layer-content { font-size: 13px; line-height: 1.7; color: var(--text-primary); white-space: pre-wrap; }
+    .empty-hint { color: #AAAAAA; font-size: 13px; }
+
+    /* ==================== 素材库 ==================== */
+    .library-header {
+      height: 10%; min-height: 70px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 0 16px; gap: 8px;
+    }
+    .filter-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .filter-tag {
+      padding: 4px 10px; font-size: 12px;
+      border: 1px solid #CCCCCC; border-radius: 3px;
+      background: var(--card-bg); cursor: pointer; color: var(--text-secondary);
+    }
+    .filter-tag.active { background: var(--accent); color: var(--text-primary); border-color: var(--accent-dark); }
+    .library-body {
+      flex: 1; overflow-y: auto; padding: 12px 16px;
+    }
+    .note-card {
+      background: var(--card-bg);
+      border: 1px solid #CCCCCC; border-radius: 4px;
+      padding: 12px; margin-bottom: 12px;
+      position: relative; user-select: none;
+      transition: box-shadow 0.15s;
+    }
+    .note-card:active { box-shadow: 0 2px 8px var(--shadow); }
+    .note-card-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+    }
+    .note-type-tag { font-size: 11px; color: var(--text-secondary); background: #F0F0F0; padding: 2px 6px; border-radius: 2px; }
+    .note-mark-btn {
+      font-size: 11px; padding: 2px 6px;
+      border: 1px solid #CCCCCC; border-radius: 2px;
+      background: transparent; cursor: pointer; color: var(--text-secondary);
+    }
+    .note-mark-btn.marked-重点掌握 { background: #FFF3E0; border-color: #FFB74D; color: #E65100; }
+    .note-mark-btn.marked-易错回顾 { background: #FFEBEE; border-color: #EF9A9A; color: #C62828; }
+    .note-text { font-size: 14px; line-height: 1.6; color: var(--text-primary); }
+    .note-expand-btn {
+      margin-top: 8px; font-size: 12px; color: var(--text-secondary);
+      background: none; border: none; cursor: pointer; padding: 0;
+    }
+    .note-detail {
+      margin-top: 10px; padding-top: 10px;
+      border-top: 1px solid #EEEEEE;
+      display: none; font-size: 13px; line-height: 1.7; color: var(--text-primary);
+    }
+    .note-detail.open { display: block; }
+    .detail-block { margin-bottom: 8px; }
+    .detail-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 2px; }
+    .detail-text { font-size: 13px; }
+
+    /* ==================== 复习页 ==================== */
+    .review-body {
+      flex: 1;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .review-title { font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; }
+    .review-card {
+      width: 100%; max-width: 480px;
+      background: var(--card-bg);
+      border: 1px solid #CCCCCC; border-radius: 4px;
+      padding: 24px;
+      text-align: center;
+    }
+    .review-sentence { font-size: 18px; line-height: 1.8; color: var(--text-primary); margin-bottom: 20px; }
+    .review-toggle-btn {
+      padding: 8px 20px; font-size: 13px;
+      background: var(--accent); border: 1px solid var(--accent-dark);
+      border-radius: 3px; cursor: pointer; color: var(--text-primary);
+    }
+    .review-toggle-btn:active { background: var(--accent-dark); }
+    .review-detail {
+      margin-top: 20px; text-align: left;
+      display: none; font-size: 13px; line-height: 1.7;
+    }
+    .review-detail.open { display: block; }
+    .review-nav { margin-top: 24px; display: flex; gap: 16px; }
+    .review-nav-btn {
+      padding: 8px 20px; font-size: 13px;
+      border: 1px solid #CCCCCC; border-radius: 3px;
+      background: var(--card-bg); cursor: pointer;
+    }
+    .review-nav-btn:active { background: var(--accent); }
+
+    /* ==================== Toast提示 ==================== */
+    .toast {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.7); color: #FFFFFF;
+      padding: 10px 18px; border-radius: 4px;
+      font-size: 14px; z-index: 200;
+      display: none; pointer-events: none;
+    }
+    .toast.show { display: block; }
+
+    /* ==================== 删除确认弹窗 ==================== */
+    .confirm-modal {
+      width: 76%; max-width: 300px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color); border-radius: 4px;
+      padding: 20px; text-align: center;
+    }
+    .confirm-text { font-size: 14px; margin-bottom: 16px; }
+    .confirm-btns { display: flex; gap: 10px; justify-content: center; }
+    .confirm-btn {
+      padding: 8px 16px; font-size: 13px;
+      border: 1px solid #CCCCCC; border-radius: 3px;
+      background: var(--card-bg); cursor: pointer;
+    }
+    .confirm-btn.primary { background: var(--accent); border-color: var(--accent-dark); }
+
+    /* ==================== 响应式与触控优化 ==================== */
+    @media (max-width: 640px) {
+      .edit-body { flex-direction: column; }
+      .edit-left { border-right: none; border-bottom: 1px solid var(--border-color); }
+      .template-grid { gap: 10px; padding: 10px; }
+      .template-card-title { font-size: 14px; }
+      .template-card-desc { font-size: 11px; }
+      .review-sentence { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== 页面1：首页 ==================== -->
+  <div class="page active" id="page-home">
+    <div class="home-header">
+      <div class="home-title-wrap">
+        <div class="home-title">日式私人日语学习手帐</div>
+        <div class="home-subtitle">随写随译轻量化自学工具</div>
+      </div>
+      <div class="settings-icon" onclick="app.openSettings()" title="设置">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </div>
+    </div>
+    <div class="template-grid">
+      <div class="template-card" data-type="课文" onclick="app.goEdit('课文')">
+        <div class="template-card-title">课文精读手帐</div>
+        <div class="template-card-desc">适配课内长难句记录</div>
+      </div>
+      <div class="template-card" data-type="台词" onclick="app.goEdit('台词')">
+        <div class="template-card-title">影视台词积累页</div>
+        <div class="template-card-desc">适配番剧、日剧口语记录</div>
+      </div>
+      <div class="template-card" data-type="随笔" onclick="app.goEdit('随笔')">
+        <div class="template-card-title">日语随笔日记页</div>
+        <div class="template-card-desc">自由短句写作练习</div>
+      </div>
+      <div class="template-card" data-type="阅读" onclick="app.goEdit('阅读')">
+        <div class="template-card-title">阅读摘抄积累页</div>
+        <div class="template-card-desc">课外读物、新闻好句</div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <button class="nav-btn active" onclick="app.goHome()">首页</button>
+      <button class="nav-btn" onclick="app.goLibrary()">我的素材库</button>
+      <button class="nav-btn" onclick="app.goReview()">自测复习</button>
+    </div>
+  </div>
+
+  <!-- ==================== 页面2：手帐编辑页 ==================== -->
+  <div class="page" id="page-edit">
+    <div class="edit-body">
+      <div class="edit-left">
+        <div class="edit-panel-header" id="edit-header-title">课文精读手帐</div>
+        <textarea class="edit-textarea" id="edit-input" placeholder="在此输入日语或中文短句，右侧实时解析..."></textarea>
+        <div class="edit-actions">
+          <button class="btn-small" onclick="app.clearEdit()">清空文本</button>
+          <button class="btn-small btn-save" onclick="app.saveNote()">保存手帐记录</button>
+        </div>
+      </div>
+      <div class="edit-right">
+        <div class="analysis-layer">
+          <div class="layer-title">双向翻译</div>
+          <div class="layer-content" id="layer-trans">
+            <span class="empty-hint">等待输入...</span>
+          </div>
+        </div>
+        <div class="analysis-layer">
+          <div class="layer-title">词汇注释</div>
+          <div class="layer-content" id="layer-words">
+            <span class="empty-hint">等待输入...</span>
+          </div>
+        </div>
+        <div class="analysis-layer">
+          <div class="layer-title">助词句型解析</div>
+          <div class="layer-content" id="layer-grammar">
+            <span class="empty-hint">等待输入...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <button class="nav-btn" onclick="app.goHome()">首页</button>
+      <button class="nav-btn" onclick="app.goLibrary()">我的素材库</button>
+      <button class="nav-btn" onclick="app.goReview()">自测复习</button>
+    </div>
+  </div>
+
+  <!-- ==================== 页面3：素材库 ==================== -->
+  <div class="page" id="page-library">
+    <div class="library-header">
+      <div class="filter-row">
+        <span style="font-size:12px;color:var(--text-secondary);">分类：</span>
+        <button class="filter-tag active" data-cat="全部" onclick="app.setLibraryFilter('cat','全部')">全部</button>
+        <button class="filter-tag" data-cat="课文" onclick="app.setLibraryFilter('cat','课文')">课文</button>
+        <button class="filter-tag" data-cat="台词" onclick="app.setLibraryFilter('cat','台词')">台词</button>
+        <button class="filter-tag" data-cat="随笔" onclick="app.setLibraryFilter('cat','随笔')">随笔</button>
+        <button class="filter-tag" data-cat="阅读" onclick="app.setLibraryFilter('cat','阅读')">阅读</button>
+      </div>
+      <div class="filter-row">
+        <span style="font-size:12px;color:var(--text-secondary);">标签：</span>
+        <button class="filter-tag active" data-tag="全部" onclick="app.setLibraryFilter('tag','全部')">全部</button>
+        <button class="filter-tag" data-tag="重点掌握" onclick="app.setLibraryFilter('tag','重点掌握')">重点掌握</button>
+        <button class="filter-tag" data-tag="易错回顾" onclick="app.setLibraryFilter('tag','易错回顾')">易错回顾</button>
+      </div>
+    </div>
+    <div class="library-body" id="library-list">
+      <!-- 动态渲染卡片 -->
+    </div>
+    <div class="bottom-nav">
+      <button class="nav-btn" onclick="app.goHome()">首页</button>
+      <button class="nav-btn active" onclick="app.goLibrary()">我的素材库</button>
+      <button class="nav-btn" onclick="app.goReview()">自测复习</button>
+    </div>
+  </div>
+
+  <!-- ==================== 页面4：自测复习 ==================== -->
+  <div class="page" id="page-review">
+    <div class="review-body">
+      <div class="review-title">日语短句自测</div>
+      <div class="review-card">
+        <div class="review-sentence" id="review-sentence">暂无复习内容，请先在手帐中录入并保存。</div>
+        <button class="review-toggle-btn" id="review-toggle" onclick="app.toggleReviewDetail()" style="display:none;">显示释义</button>
+        <div class="review-detail" id="review-detail">
+          <!-- 动态填充 -->
+        </div>
+      </div>
+      <div class="review-nav">
+        <button class="review-nav-btn" onclick="app.prevReview()">上一句</button>
+        <button class="review-nav-btn" onclick="app.nextReview()">下一句</button>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <button class="nav-btn" onclick="app.goHome()">首页</button>
+      <button class="nav-btn" onclick="app.goLibrary()">我的素材库</button>
+      <button class="nav-btn active" onclick="app.goReview()">自测复习</button>
+    </div>
+  </div>
+
+  <!-- ==================== 全局弹窗层 ==================== -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="settings-modal" id="settings-panel" style="display:none;">
+      <div class="modal-title">设置</div>
+
+      <!-- 分区1：学习数据统计 -->
+      <div class="modal-section">
+        <div class="modal-label">学习数据统计</div>
+        <div class="modal-text" id="stats-text">总记录条数：0<br>标记重点内容：0</div>
+      </div>
+
+      <!-- 分区2：基础设置 -->
+      <div class="modal-section">
+        <div class="modal-label">基础设置</div>
+        <div class="modal-text">① 存储说明：本地私有存储，数据仅保存在本机，清理浏览器数据将丢失。</div>
+        <div class="modal-row" style="margin-top:10px;">
+          <span class="modal-text">② 界面配色</span>
+          <div class="theme-toggle-group">
+            <button class="theme-option active" id="theme-beige" onclick="app.setTheme('beige')">米白极简</button>
+            <button class="theme-option" id="theme-blue" onclick="app.setTheme('blue')">浅蓝日式</button>
+          </div>
+        </div>
+        <div class="modal-text" style="margin-top:8px;">③ 版本：v1.0.0</div>
+        <div class="modal-text" style="margin-top:8px;">④ 使用说明：选择模板 → 输入短句 → 右侧实时解析 → 保存至素材库 → 复习页回顾。</div>
+      </div>
+
+      <!-- 分区3：翻译引擎配置（后期迭代拓展区域） -->
+      <div class="modal-section">
+        <div class="modal-label">翻译引擎配置（后期迭代拓展区域）</div>
+        <div class="modal-text">选择翻译模式：演示模式无需联网；API模式需配置密钥后接入真实大模型。</div>
+        <div class="mode-select-group">
+          <button class="mode-option active" id="mode-mock" onclick="app.setTranslatorMode('mock')">演示模式</button>
+          <button class="mode-option" id="mode-api" onclick="app.setTranslatorMode('api')">API模式</button>
+        </div>
+        <!-- API配置输入区（默认隐藏，选择API模式后展开） -->
+        <div class="api-config-area" id="api-config-area">
+          <input class="modal-input" id="api-key" type="password" placeholder="请输入API密钥（如 sk-xxx）" />
+          <input class="modal-input" id="api-endpoint" placeholder="接口地址（如 https://dashscope.aliyuncs.com/...）" />
+          <input class="modal-input" id="api-model" placeholder="模型名称（如 qwen-turbo / deepseek-chat）" />
+          <div class="modal-hint">
+            提示：配置完成后需取消脚本中【后期迭代拓展代码】的注释，并关闭演示层，方可真正调用大模型接口。当前演示阶段即使填写密钥，仍走模拟翻译逻辑以保证离线可用。
+          </div>
+          <button class="modal-close-btn" style="margin-top:10px;" onclick="app.saveApiConfig()">保存API配置</button>
+        </div>
+      </div>
+
+      <button class="modal-close-btn" onclick="app.closeSettings()">关闭</button>
+    </div>
+    <div class="confirm-modal" id="delete-confirm" style="display:none;">
+      <div class="confirm-text">确定删除这条记录吗？</div>
+      <div class="confirm-btns">
+        <button class="confirm-btn" onclick="app.cancelDelete()">取消</button>
+        <button class="confirm-btn primary" onclick="app.confirmDelete()">删除</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- ==================== 核心脚本 ==================== -->
+  <script>
+    /**
+     * ============================================================
+     * 日式私人日语学习手帐 - 单页应用（SPA）
+     * 技术栈：纯HTML + CSS + 原生JavaScript
+     * 存储：浏览器LocalStorage
+     * 路由：Hash路由（#/home, #/edit?type=xxx, #/library, #/review）
+     * ============================================================
+     *
+     * ==================== 使用说明 ====================
+     *
+     * 【一、现阶段离线演示方法（答辩/大创展示用）】
+     * 1. 直接双击本HTML文件，浏览器打开即可运行，无需网络、无需后端。
+     * 2. 在设置中选择「演示模式」（默认）。
+     * 3. 选择任意手帐模板 → 在左侧输入日语或中文短句 → 右侧自动显示模拟翻译结果。
+     * 4. 点击「保存手帐记录」存入本地 → 素材库查看 → 复习页回顾。
+     * 5. 所有数据保存在浏览器LocalStorage中，关闭页面不丢失（清理浏览器缓存会丢失）。
+     *
+     * 【二、后期接入真实大模型的修改步骤（迭代开发用）】
+     * 1. 在设置页面选择「API模式」，填入以下信息并保存：
+     *    - API密钥（通义千问/DeepSeek等平台的Key）
+     *    - 接口地址（如通义千问：https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation）
+     *    - 模型名称（如 qwen-turbo、deepseek-chat）
+     * 2. 在脚本中找到标记为【后期迭代拓展代码】的区域（Translator.translate 方法内）：
+     *    - 取消调用 ApiTranslator.translate() 的注释
+     *    - 注释或删除自动回退到演示模式的兜底逻辑
+     * 3. 在 ApiTranslator 对象中，根据所选大模型的官方文档：
+     *    - 调整 requestBody 的字段名（如 model、input、messages、temperature 等）
+     *    - 调整响应解析路径（如 response.output.text / choices[0].message.content 等）
+     *    - 如需代理或CORS处理，可配置对应请求头
+     * 4. 保存后刷新页面，输入短句即可调用真实大模型进行随写随译。
+     * 5. 如需恢复离线演示，重新切回「演示模式」即可，无需删除API配置。
+     *
+     * 【三、代码注释规范】
+     * - 标记「当前演示代码」的部分：为现有离线功能，答辩时正常运行。
+     * - 标记「后期迭代拓展代码」的部分：为预留空位，接入真实API时启用。
+     * ============================================================
+     */
+
+    // ==================== 模块1：常量与配置 ====================
+    const STORAGE_KEY = 'jp-study-notes-v1';
+    const MAX_LENGTH = 500;
+    const TEMPLATE_MAP = {
+      '课文': '课文精读手帐',
+      '台词': '影视台词积累页',
+      '随笔': '日语随笔日记页',
+      '阅读': '阅读摘抄积累页'
+    };
+    const TEMPLATE_TYPES = ['课文', '台词', '随笔', '阅读'];
+    const MARK_LABELS = ['', '重点掌握', '易错回顾'];
+
+    // ==================== 模块2：翻译引擎核心调度器 ====================
+    /**
+     * Translator 为翻译总调度器，负责根据用户配置决定走演示层还是API层。
+     * 当前演示阶段：默认始终走 MockTranslator（离线模拟）。
+     * 后期迭代阶段：取消 ApiTranslator 调用注释，即可接入真实大模型。
+     */
+    const Translator = {
+      // 当前模式：'mock' = 演示层（离线）, 'api' = 拓展层（需联网+密钥）
+      mode: localStorage.getItem('translator_mode') || 'mock',
+
+      // API配置缓存（后期迭代拓展用）
+      apiConfig: {
+        key: localStorage.getItem('api_key') || '',
+        endpoint: localStorage.getItem('api_endpoint') || '',
+        model: localStorage.getItem('api_model') || ''
+      },
+
+      // 设置翻译模式
+      setMode(mode) {
+        this.mode = mode;
+        localStorage.setItem('translator_mode', mode);
+      },
+
+      // 保存API配置（后期迭代拓展用）
+      setApiConfig(cfg) {
+        this.apiConfig = { ...this.apiConfig, ...cfg };
+        if (cfg.key !== undefined) localStorage.setItem('api_key', cfg.key);
+        if (cfg.endpoint !== undefined) localStorage.setItem('api_endpoint', cfg.endpoint);
+        if (cfg.model !== undefined) localStorage.setItem('api_model', cfg.model);
+      },
+
+      /**
+       * 翻译入口
+       * 当前演示代码：无论mode为何，均返回 MockTranslator 结果，保证离线可用。
+       * 后期迭代拓展代码：mode为'api'且密钥存在时，调用 ApiTranslator 发起真实网络请求。
+       */
+      async translate(text) {
+        const trimmed = text.trim();
+        if (!trimmed) return null;
+        if (trimmed.length > MAX_LENGTH) {
+          return { error: '请输入短句记录（限500字符以内）' };
+        }
+
+        // ==================== 后期迭代拓展代码（当前已注释禁用） ====================
+        // 接入真实大模型步骤：
+        // 1. 取消下方 if 块的注释
+        // 2. 删除或注释「自动回退到演示模式」的兜底逻辑
+        // 3. 在 ApiTranslator 中补全请求体与响应解析
+        // if (this.mode === 'api' && this.apiConfig.key && this.apiConfig.endpoint) {
+        //   try {
+        //     return await ApiTranslator.translate(trimmed, this.apiConfig);
+        //   } catch (err) {
+        //     return { error: 'API请求失败：' + err.message };
+        //   }
+        // }
+        // ==================== 后期迭代拓展代码结束 ====================
+
+        // ==================== 当前演示代码（离线模拟翻译） ====================
+        // 演示阶段：若用户选了API模式但真实接口尚未接入，在控制台提示，仍返回模拟结果
+        if (this.mode === 'api') {
+          console.log('[后期迭代提示] 当前为API模式，但真实大模型接口尚未启用，已自动回退到演示模式。' +
+            '请在代码中取消 Translator.translate 内 ApiTranslator 调用的注释以正式接入。');
+        }
+        return MockTranslator.translate(trimmed);
+        // ==================== 当前演示代码结束 ====================
+      }
+    };
+
+    // ==================== 模块2A：演示层 - 离线模拟翻译引擎 ====================
+    /**
+     * MockTranslator：当前演示代码
+     * 功能：基于内置词库做简单的关键词替换，生成模拟翻译结果。
+     * 适用场景：无网络环境、答辩展示、功能原型验证。
+     * 无需修改即可直接使用。
+     */
+    const MockTranslator = {
+      isJapanese(text) {
+        return /[\u3040-\u309F\u30A0-\u30FF]/.test(text);
+      },
+      translate(text) {
+        const isJp = this.isJapanese(text);
+        return {
+          written: isJp ? this.toStandardCn(text) : this.toStandardJp(text),
+          spoken: isJp ? this.toSpokenCn(text) : this.toSpokenJp(text),
+          words: this.extractWords(text, isJp),
+          grammar: this.extractGrammar(text, isJp)
+        };
+      },
+      toStandardCn(text) {
+        const map = {
+          '私': '我', '学生': '学生', '日本語': '日语', '勉強': '学习',
+          '好き': '喜欢', '本': '书', '読む': '阅读', '食べる': '吃',
+          '行く': '去', '来る': '来', '見る': '看', '言う': '说',
+          'ありがとう': '谢谢', 'おはよう': '早上好', 'こんにちは': '你好',
+          '頑張る': '努力', '大切': '重要', '夢': '梦想', '未来': '未来',
+          '友達': '朋友', '先生': '老师', '学校': '学校', '会社': '公司'
+        };
+        return this.replaceWithMap(text, map) + '（书面译）';
+      },
+      toSpokenCn(text) {
+        const map = {
+          '私': '我', '学生': '学生', '日本語': '日语', '勉強': '学',
+          '好き': '喜欢', '本': '书', '読む': '看看', '食べる': '吃',
+          '行く': '去一下', '来る': '过来', '見る': '瞅瞅', '言う': '说',
+          'ありがとう': '谢啦', 'おはよう': '早啊', 'こんにちは': '你好啊',
+          '頑張る': '加油干', '大切': '挺重要', '夢': '梦想', '未来': '将来',
+          '友達': '朋友', '先生': '老师', '学校': '学校', '会社': '公司'
+        };
+        return this.replaceWithMap(text, map) + '（口语化）';
+      },
+      toStandardJp(text) {
+        const map = {
+          '我': '私は', '你': 'あなたは', '他': '彼は', '学生': '学生',
+          '日语': '日本語', '学习': '勉強する', '喜欢': '好きだ',
+          '书': '本', '阅读': '読む', '吃': '食べる', '去': '行く',
+          '来': '来る', '看': '見る', '说': '言う', '谢谢': 'ありがとう',
+          '你好': 'こんにちは', '努力': '頑張る', '重要': '大切だ',
+          '梦想': '夢', '未来': '未来', '朋友': '友達', '老师': '先生',
+          '学校': '学校', '公司': '会社', '今天': '今日', '明天': '明日'
+        };
+        return this.replaceWithMap(text, map) + ' / 書き言葉';
+      },
+      toSpokenJp(text) {
+        const map = {
+          '我': '僕は/私は', '你': '君は/あなた', '他': '彼', '学生': '学生',
+          '日语': '日本語', '学习': '勉強してる', '喜欢': '好き',
+          '书': '本', '阅读': '読んでる', '吃': '食べてる', '去': '行ってくる',
+          '来': '来て', '看': '見てる', '说': '言ってる', '谢谢': 'サンキュー/ありがとう',
+          '你好': 'やあ/こんにちは', '努力': '頑張ってる', '重要': '大事',
+          '梦想': '夢', '未来': '未来', '朋友': '友達', '老师': '先生',
+          '学校': '学校', '公司': '会社', '今天': '今日', '明天': '明日'
+        };
+        return this.replaceWithMap(text, map) + ' / 話し言葉';
+      },
+      replaceWithMap(text, map) {
+        let result = text;
+        for (const [k, v] of Object.entries(map)) {
+          result = result.split(k).join(v);
+        }
+        return result || text;
+      },
+      extractWords(text, isJp) {
+        const jpWords = [
+          {w:'私', d:'我（わたし）'}, {w:'日本語', d:'日语（にほんご）'},
+          {w:'勉強', d:'学习（べんきょう）'}, {w:'好き', d:'喜欢（すき）'},
+          {w:'頑張る', d:'努力（がんばる）'}, {w:'大切', d:'重要（たいせつ）'},
+          {w:'友達', d:'朋友（ともだち）'}, {w:'先生', d:'老师（せんせい）'},
+          {w:'読む', d:'阅读（よむ）'}, {w:'食べる', d:'吃（たべる）'}
+        ];
+        const cnWords = [
+          {w:'日语', d:'日本語（にほんご）'}, {w:'学习', d:'勉強（べんきょう）'},
+          {w:'喜欢', d:'好き（すき）'}, {w:'努力', d:'頑張る（がんばる）'},
+          {w:'重要', d:'大切（たいせつ）'}, {w:'朋友', d:'友達（ともだち）'},
+          {w:'老师', d:'先生（せんせい）'}, {w:'阅读', d:'読む（よむ）'},
+          {w:'梦想', d:'夢（ゆめ）'}, {w:'未来', d:'未来（みらい）'}
+        ];
+        const pool = isJp ? jpWords : cnWords;
+        const found = pool.filter(item => text.includes(item.w));
+        if (found.length === 0) return '（未识别到高频词汇）';
+        return found.map(item => `${item.w}：${item.d}`).join('\n');
+      },
+      extractGrammar(text, isJp) {
+        if (!isJp) {
+          const patterns = [];
+          if (text.includes('我')) patterns.push('「私は」：日语第一人称主语提示，常省略');
+          if (text.includes('的')) patterns.push('「の」：连体助词，连接修饰语与名词');
+          if (text.includes('了')) patterns.push('「た」：过去助动词，表动作完成');
+          if (text.includes('在')) patterns.push('「で/に」：场所/时间助词');
+          if (patterns.length === 0) return '（请输入日文以查看助词解析）';
+          return patterns.join('\n');
+        }
+        const patterns = [];
+        if (/は/.test(text)) patterns.push('「は」：提示助词，标记主题/对比');
+        if (/が/.test(text)) patterns.push('「が」：主格助词，标记主语/对象语');
+        if (/を/.test(text)) patterns.push('「を」：宾格助词，标记他动词宾语');
+        if (/に/.test(text)) patterns.push('「に」：指向助词，标记时间/场所/对象');
+        if (/で/.test(text)) patterns.push('「で」：场所/手段/范围助词');
+        if (/の/.test(text)) patterns.push('「の」：连体助词，表所属或修饰');
+        if (/と/.test(text)) patterns.push('「と」：并列/引用/共同助词');
+        if (/から/.test(text)) patterns.push('「から」：起点/原因助词，“从……/因为……”');
+        if (/まで/.test(text)) patterns.push('「まで」：终点助词，“直到……”');
+        if (/て/.test(text)) patterns.push('「て」：中顿/并列/原因，连接谓语');
+        if (patterns.length === 0) return '（句型较简单，暂无核心助词标注）';
+        return patterns.join('\n');
+      }
+    };
+
+    // ==================== 模块2B：拓展层 - 真实大模型API对接预留区（后期迭代拓展代码） ====================
+    /**
+     * ApiTranslator：后期迭代拓展代码（当前全部注释/禁用）
+     *
+     * 设计说明：
+     * 1. 本对象封装了真实大模型API的网络请求逻辑，当前阶段不执行任何实际调用。
+     * 2. 接入时只需取消 Translator.translate() 中对本对象的调用注释，
+     *    并根据所选大模型平台（通义千问/DeepSeek/OpenAI等）调整 requestBody 与响应解析。
+     * 3. 下方已提供通用 fetch 请求框架，可直接复用。
+     *
+     * 接入示例（通义千问）：
+     * - endpoint: https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation
+     * - model: qwen-turbo
+     * - requestBody 字段：model、input.prompt、parameters
+     * - 响应解析：result.output.text
+     *
+     * 接入示例（DeepSeek）：
+     * - endpoint: https://api.deepseek.com/v1/chat/completions
+     * - model: deepseek-chat
+     * - requestBody 字段：model、messages、temperature
+     * - 响应解析：result.choices[0].message.content
+     */
+    const ApiTranslator = {
+      /**
+       * 向大模型发送翻译解析请求
+       * @param {string} text - 用户输入的原文短句
+       * @param {object} config - 包含 key / endpoint / model
+       * @returns {Promise<{written, spoken, words, grammar}>}
+       */
+      async translate(text, config) {
+        // ==================== 后期迭代拓展代码：构造请求体 ====================
+        // 注意：不同平台的请求体结构不同，接入时请按官方文档调整。
+        const requestBody = {
+          model: config.model,
+          // 以下为示例提示词模板，可按需优化
+          input: {
+            prompt: `请将以下日语/中文短句进行学习级别的翻译解析，输出格式严格如下：
+1. 书面标准翻译：
+2. 口语生活化翻译：
+3. 高频词汇注释（单词：中文释义/日文读音）：
+4. 核心助词句型解析：
+
+原文：${text}`
+          },
+          parameters: {
+            result_format: 'message',
+            max_tokens: 800,
+            temperature: 0.3
+          }
+        };
+        // ==================== 后期迭代拓展代码结束 ====================
+
+        // ==================== 后期迭代拓展代码：发送网络请求 ====================
+        const response = await fetch(config.endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + config.key
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+          throw new Error('HTTP ' + response.status);
+        }
+
+        const result = await response.json();
+        // ==================== 后期迭代拓展代码结束 ====================
+
+        // ==================== 后期迭代拓展代码：解析响应（需按平台调整） ====================
+        // 以下为占位解析逻辑，接入真实API时按返回结构修改
+        const content = result.output?.text || result.choices?.[0]?.message?.content || '';
+
+        // 简单占位解析：实际接入时建议让大模型输出JSON或固定格式，再精确拆分
+        return {
+          written: content.split('\n')[0] || '（书面翻译解析占位）',
+          spoken: content.split('\n')[1] || '（口语翻译解析占位）',
+          words: content.split('\n')[2] || '（词汇注释占位）',
+          grammar: content.split('\n')[3] || '（句型解析占位）'
+        };
+        // ==================== 后期迭代拓展代码结束 ====================
+      }
+    };
+
+    // ==================== 模块3：本地存储层 ====================
+    const Store = {
+      getNotes() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          return raw ? JSON.parse(raw) : [];
+        } catch (e) { return []; }
+      },
+      saveNotes(notes) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+      },
+      add(note) {
+        const notes = this.getNotes();
+        note.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        note.createdAt = new Date().toISOString();
+        notes.unshift(note);
+        this.saveNotes(notes);
+        return note;
+      },
+      remove(id) {
+        const notes = this.getNotes().filter(n => n.id !== id);
+        this.saveNotes(notes);
+      },
+      update(id, updater) {
+        const notes = this.getNotes();
+        const idx = notes.findIndex(n => n.id === id);
+        if (idx > -1) {
+          notes[idx] = { ...notes[idx], ...updater };
+          this.saveNotes(notes);
+        }
+      }
+    };
+
+    // ==================== 模块4：应用主控层 ====================
+    const app = {
+      state: {
+        currentTemplate: '课文',
+        libraryFilterCat: '全部',
+        libraryFilterTag: '全部',
+        reviewIndex: 0,
+        reviewList: [],
+        deleteTargetId: null,
+        lastAnalysis: null,
+        longPressTimer: null
+      },
+
+      // 初始化
+      init() {
+        this.applyTheme(localStorage.getItem('theme') || 'beige');
+        this.bindRoute();
+        this.bindInput();
+        window.addEventListener('hashchange', () => this.route());
+        this.route();
+      },
+
+      // 路由处理
+      bindRoute() {
+        if (!location.hash) location.hash = '#/home';
+      },
+      route() {
+        const hash = location.hash || '#/home';
+        let page = 'home';
+        let type = '';
+        if (hash.startsWith('#/edit')) {
+          page = 'edit';
+          const m = hash.match(/type=([^&]+)/);
+          if (m) type = decodeURIComponent(m[1]);
+        } else if (hash.startsWith('#/library')) {
+          page = 'library';
+        } else if (hash.startsWith('#/review')) {
+          page = 'review';
+        }
+        this.switchPage(page, type);
+      },
+      switchPage(page, type) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-' + page).classList.add('active');
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        if (page === 'home') {
+          document.querySelector('#page-home .nav-btn:nth-child(1)').classList.add('active');
+        } else if (page === 'library') {
+          document.querySelector('#page-library .nav-btn:nth-child(2)').classList.add('active');
+          this.renderLibrary();
+        } else if (page === 'review') {
+          document.querySelector('#page-review .nav-btn:nth-child(3)').classList.add('active');
+          this.prepareReview();
+        } else if (page === 'edit') {
+          this.state.currentTemplate = TEMPLATE_TYPES.includes(type) ? type : '课文';
+          document.getElementById('edit-header-title').textContent = TEMPLATE_MAP[this.state.currentTemplate] || '课文精读手帐';
+          this.state.lastAnalysis = null;
+          document.getElementById('edit-input').value = '';
+          document.getElementById('layer-trans').innerHTML = '<span class="empty-hint">等待输入...</span>';
+          document.getElementById('layer-words').innerHTML = '<span class="empty-hint">等待输入...</span>';
+          document.getElementById('layer-grammar').innerHTML = '<span class="empty-hint">等待输入...</span>';
+        }
+      },
+
+      // 导航快捷方法
+      goHome() { location.hash = '#/home'; },
+      goLibrary() { location.hash = '#/library'; },
+      goReview() { location.hash = '#/review'; },
+      goEdit(type) { location.hash = '#/edit?type=' + encodeURIComponent(type); },
+
+      // 输入监听与实时翻译（debounce 400ms）
+      bindInput() {
+        const input = document.getElementById('edit-input');
+        let timer = null;
+        input.addEventListener('input', () => {
+          clearTimeout(timer);
+          timer = setTimeout(() => this.runTranslate(), 400);
+        });
+      },
+
+      /**
+       * 实时翻译触发
+       * 当前演示代码：调用 Translator.translate，其内部实际走 MockTranslator。
+       * 后期迭代拓展代码：Translator.translate 内部会自动判断模式，mode='api'时走网络请求。
+       */
+      async runTranslate() {
+        const text = document.getElementById('edit-input').value;
+        const result = await Translator.translate(text);
+        if (!result) {
+          document.getElementById('layer-trans').innerHTML = '<span class="empty-hint">等待输入...</span>';
+          document.getElementById('layer-words').innerHTML = '<span class="empty-hint">等待输入...</span>';
+          document.getElementById('layer-grammar').innerHTML = '<span class="empty-hint">等待输入...</span>';
+          this.state.lastAnalysis = null;
+          return;
+        }
+        if (result.error) {
+          document.getElementById('layer-trans').textContent = result.error;
+          document.getElementById('layer-words').innerHTML = '<span class="empty-hint">-</span>';
+          document.getElementById('layer-grammar').innerHTML = '<span class="empty-hint">-</span>';
+          this.state.lastAnalysis = null;
+          return;
+        }
+        this.state.lastAnalysis = result;
+        document.getElementById('layer-trans').innerHTML =
+          `<div>书面标准翻译：${this.esc(result.written)}</div>` +
+          `<div style="margin-top:6px;">口语生活化翻译：${this.esc(result.spoken)}</div>`;
+        document.getElementById('layer-words').innerHTML = this.nl2br(this.esc(result.words));
+        document.getElementById('layer-grammar').innerHTML = this.nl2br(this.esc(result.grammar));
+      },
+
+      // 保存手帐
+      saveNote() {
+        const text = document.getElementById('edit-input').value.trim();
+        if (!text) { this.toast('请输入内容后再保存'); return; }
+        if (!this.state.lastAnalysis || this.state.lastAnalysis.error) {
+          this.toast('翻译解析异常，请检查输入'); return;
+        }
+        const a = this.state.lastAnalysis;
+        Store.add({
+          text: text,
+          written: a.written,
+          spoken: a.spoken,
+          words: a.words,
+          grammar: a.grammar,
+          template: this.state.currentTemplate,
+          mark: ''
+        });
+        this.toast('保存成功');
+      },
+      clearEdit() {
+        document.getElementById('edit-input').value = '';
+        this.runTranslate();
+      },
+
+      // 素材库筛选与渲染
+      setLibraryFilter(kind, value) {
+        if (kind === 'cat') this.state.libraryFilterCat = value;
+        if (kind === 'tag') this.state.libraryFilterTag = value;
+        document.querySelectorAll('.filter-row .filter-tag').forEach(btn => {
+          const cat = btn.dataset.cat;
+          const tag = btn.dataset.tag;
+          let active = false;
+          if (cat && cat === this.state.libraryFilterCat) active = true;
+          if (tag && tag === this.state.libraryFilterTag) active = true;
+          btn.classList.toggle('active', active);
+        });
+        this.renderLibrary();
+      },
+      renderLibrary() {
+        const list = document.getElementById('library-list');
+        let notes = Store.getNotes();
+        if (this.state.libraryFilterCat !== '全部') {
+          notes = notes.filter(n => n.template === this.state.libraryFilterCat);
+        }
+        if (this.state.libraryFilterTag !== '全部') {
+          notes = notes.filter(n => n.mark === this.state.libraryFilterTag);
+        }
+        if (notes.length === 0) {
+          list.innerHTML = '<div style="text-align:center;color:#AAAAAA;font-size:14px;margin-top:40px;">暂无记录</div>';
+          return;
+        }
+        list.innerHTML = notes.map(note => `
+          <div class="note-card" data-id="${note.id}">
+            <div class="note-card-header">
+              <span class="note-type-tag">${this.esc(note.template)}</span>
+              <button class="note-mark-btn${note.mark ? ' marked-' + note.mark : ''}" onclick="app.cycleMark('${note.id}', event)">${note.mark || '标记'}</button>
+            </div>
+            <div class="note-text">${this.esc(note.text)}</div>
+            <button class="note-expand-btn" onclick="app.toggleExpand('${note.id}')">展开详情</button>
+            <div class="note-detail" id="detail-${note.id}">
+              <div class="detail-block"><div class="detail-label">书面翻译</div><div class="detail-text">${this.esc(note.written)}</div></div>
+              <div class="detail-block"><div class="detail-label">口语翻译</div><div class="detail-text">${this.esc(note.spoken)}</div></div>
+              <div class="detail-block"><div class="detail-label">词汇注释</div><div class="detail-text">${this.nl2br(this.esc(note.words))}</div></div>
+              <div class="detail-block"><div class="detail-label">句型解析</div><div class="detail-text">${this.nl2br(this.esc(note.grammar))}</div></div>
+            </div>
+          </div>
+        `).join('');
+        this.bindLongPress();
+      },
+      toggleExpand(id) {
+        const el = document.getElementById('detail-' + id);
+        const btn = el.previousElementSibling;
+        el.classList.toggle('open');
+        btn.textContent = el.classList.contains('open') ? '收起详情' : '展开详情';
+      },
+      cycleMark(id, ev) {
+        ev.stopPropagation();
+        const notes = Store.getNotes();
+        const note = notes.find(n => n.id === id);
+        if (!note) return;
+        let idx = MARK_LABELS.indexOf(note.mark);
+        idx = (idx + 1) % MARK_LABELS.length;
+        const next = MARK_LABELS[idx];
+        Store.update(id, { mark: next });
+        this.renderLibrary();
+      },
+      // 长按删除绑定（触控+鼠标）
+      bindLongPress() {
+        document.querySelectorAll('.note-card').forEach(card => {
+          const id = card.dataset.id;
+          const start = (e) => {
+            if (e.target.closest('.note-mark-btn') || e.target.closest('.note-expand-btn')) return;
+            this.state.longPressTimer = setTimeout(() => {
+              this.state.deleteTargetId = id;
+              document.getElementById('settings-panel').style.display = 'none';
+              document.getElementById('delete-confirm').style.display = 'block';
+              document.getElementById('modal-overlay').classList.add('active');
+            }, 800);
+          };
+          const clear = () => { clearTimeout(this.state.longPressTimer); };
+          card.addEventListener('mousedown', start);
+          card.addEventListener('touchstart', start, { passive: true });
+          card.addEventListener('mouseup', clear);
+          card.addEventListener('mouseleave', clear);
+          card.addEventListener('touchend', clear);
+          card.addEventListener('touchcancel', clear);
+        });
+      },
+      cancelDelete() {
+        this.state.deleteTargetId = null;
+        document.getElementById('modal-overlay').classList.remove('active');
+        document.getElementById('delete-confirm').style.display = 'none';
+      },
+      confirmDelete() {
+        if (this.state.deleteTargetId) {
+          Store.remove(this.state.deleteTargetId);
+          this.state.deleteTargetId = null;
+          this.renderLibrary();
+          this.toast('已删除');
+        }
+        document.getElementById('modal-overlay').classList.remove('active');
+        document.getElementById('delete-confirm').style.display = 'none';
+      },
+
+      // 自测复习
+      prepareReview() {
+        const notes = Store.getNotes();
+        this.state.reviewList = notes;
+        this.state.reviewIndex = 0;
+        this.renderReview();
+      },
+      renderReview() {
+        const sentenceEl = document.getElementById('review-sentence');
+        const toggleBtn = document.getElementById('review-toggle');
+        const detailEl = document.getElementById('review-detail');
+        detailEl.classList.remove('open');
+        toggleBtn.textContent = '显示释义';
+        if (this.state.reviewList.length === 0) {
+          sentenceEl.textContent = '暂无复习内容，请先在手帐中录入并保存。';
+          toggleBtn.style.display = 'none';
+          detailEl.innerHTML = '';
+          return;
+        }
+        toggleBtn.style.display = 'inline-block';
+        const note = this.state.reviewList[this.state.reviewIndex];
+        sentenceEl.textContent = note.text;
+        detailEl.innerHTML =
+          `<div style="margin-bottom:8px;"><span style="color:var(--text-secondary);font-size:11px;">书面翻译：</span>${this.esc(note.written)}</div>` +
+          `<div style="margin-bottom:8px;"><span style="color:var(--text-secondary);font-size:11px;">口语翻译：</span>${this.esc(note.spoken)}</div>` +
+          `<div style="margin-bottom:8px;"><span style="color:var(--text-secondary);font-size:11px;">词汇注释：</span><br>${this.nl2br(this.esc(note.words))}</div>` +
+          `<div><span style="color:var(--text-secondary);font-size:11px;">句型解析：</span><br>${this.nl2br(this.esc(note.grammar))}</div>`;
+      },
+      toggleReviewDetail() {
+        const detail = document.getElementById('review-detail');
+        const btn = document.getElementById('review-toggle');
+        detail.classList.toggle('open');
+        btn.textContent = detail.classList.contains('open') ? '隐藏释义' : '显示释义';
+      },
+      nextReview() {
+        if (this.state.reviewList.length === 0) return;
+        this.state.reviewIndex = (this.state.reviewIndex + 1) % this.state.reviewList.length;
+        this.renderReview();
+      },
+      prevReview() {
+        if (this.state.reviewList.length === 0) return;
+        this.state.reviewIndex = (this.state.reviewIndex - 1 + this.state.reviewList.length) % this.state.reviewList.length;
+        this.renderReview();
+      },
+
+      // 设置弹窗
+      openSettings() {
+        const notes = Store.getNotes();
+        const total = notes.length;
+        const marked = notes.filter(n => n.mark !== '').length;
+        document.getElementById('stats-text').innerHTML = `总记录条数：${total}<br>标记重点内容：${marked}`;
+        document.getElementById('delete-confirm').style.display = 'none';
+        document.getElementById('settings-panel').style.display = 'block';
+        document.getElementById('modal-overlay').classList.add('active');
+
+        // 恢复翻译引擎配置显示（后期迭代拓展区域）
+        const mode = Translator.mode;
+        document.getElementById('mode-mock').classList.toggle('active', mode === 'mock');
+        document.getElementById('mode-api').classList.toggle('active', mode === 'api');
+        document.getElementById('api-config-area').classList.toggle('open', mode === 'api');
+        document.getElementById('api-key').value = Translator.apiConfig.key;
+        document.getElementById('api-endpoint').value = Translator.apiConfig.endpoint;
+        document.getElementById('api-model').value = Translator.apiConfig.model;
+      },
+      closeSettings() {
+        document.getElementById('modal-overlay').classList.remove('active');
+        document.getElementById('settings-panel').style.display = 'none';
+      },
+
+      // 切换翻译模式（后期迭代拓展区域）
+      setTranslatorMode(mode) {
+        Translator.setMode(mode);
+        document.getElementById('mode-mock').classList.toggle('active', mode === 'mock');
+        document.getElementById('mode-api').classList.toggle('active', mode === 'api');
+        document.getElementById('api-config-area').classList.toggle('open', mode === 'api');
+        this.toast(mode === 'mock' ? '已切换为演示模式' : '已切换为API模式（需配置密钥）');
+      },
+
+      // 保存API配置（后期迭代拓展区域）
+      saveApiConfig() {
+        const key = document.getElementById('api-key').value.trim();
+        const endpoint = document.getElementById('api-endpoint').value.trim();
+        const model = document.getElementById('api-model').value.trim();
+        Translator.setApiConfig({ key, endpoint, model });
+        this.toast('API配置已保存');
+      },
+
+      setTheme(theme) {
+        localStorage.setItem('theme', theme);
+        this.applyTheme(theme);
+        document.getElementById('theme-beige').classList.toggle('active', theme === 'beige');
+        document.getElementById('theme-blue').classList.toggle('active', theme === 'blue');
+      },
+      applyTheme(theme) {
+        document.body.classList.toggle('theme-blue', theme === 'blue');
+      },
+
+      // 工具方法
+      toast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 1000);
+      },
+      esc(str) {
+        return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+      },
+      nl2br(str) {
+        return String(str).replace(/\n/g, '<br>');
+      }
+    };
+
+    // 启动应用
+    app.init();
+  </script>
+</body>
+</html>
